@@ -1,6 +1,7 @@
 ## Space Engineers Mod Toolkit for Blender ##
 
-This is a blender template with embedded scripts for creating mods for the game Space Engineers.
+This is a [Blender](http://blender.org) template with embedded scripts for creating mods for the game [Space Engineers](http://www.spaceengineersgame.com/).
+It's a community project and not affiliated with the game developers.
 
 ### The Guide ###
 
