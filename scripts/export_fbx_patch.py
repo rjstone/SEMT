@@ -978,6 +978,8 @@ def save_single(operator, scene, filepath="",
         if not mat_shadeless:
             fw('\n\t\t\tProperty: "Reflectivity", "double", "",0')
 
+        write_custom_props(mat)
+
         fw('\n\t\t}')
         fw('\n\t}')
 
@@ -1060,6 +1062,8 @@ def save_single(operator, scene, filepath="",
 
         fw('\n\t\tFileName: "%s"' % fname_strip)
         fw('\n\t\tRelativeFilename: "%s"' % fname_rel)  # need some make relative command
+
+        write_custom_props(tex)
 
         fw('''
 		ModelUVTranslation: 0,0
@@ -2613,14 +2617,71 @@ Takes:  {''')
     print('export finished in %.4f sec.' % (time.process_time() - start_time))
     return {'FINISHED'}
 
+
 save_single_orig = io_scene_fbx.export_fbx.save_single
+
+
+def sane_name(data, dct, unique_set=None):
+    #if not data: return None
+
+    # XXX - local modification - materials are NOT paired up with images for naming purposes
+    # trying to maintain workflow compatability with Autodesk tools for this particular purpose
+    if type(data) == tuple:
+        data, other = data
+        use_other = True
+    else:
+        other = None
+        use_other = False
+
+    name = data.name if data else None
+    orig_name = name
+
+    # XXX - local modification - materials are NOT paired up with images for naming purposes
+    # trying to maintain workflow compatability with Autodesk tools for this particular purpose
+    if other:
+        orig_name_other = other.name
+        #name = '%s #%s' % (name, orig_name_other)
+    else:
+        orig_name_other = None
+
+    # dont cache, only ever call once for each data type now,
+    # so as to avoid namespace collision between types - like with objects <-> bones
+    #try:		return dct[name]
+    #except:		pass
+
+    if not name:
+        name = 'unnamed'  # blank string, ASKING FOR TROUBLE!
+    else:
+        name = bpy.path.clean_name(name)  # use our own
+
+    name_unique = dct.values() if unique_set is None else unique_set
+
+    while name in name_unique:
+        name = increment_string(name)
+
+    if use_other:  # even if other is None - orig_name_other will be a string or None
+        dct[orig_name, orig_name_other] = name
+    else:
+        dct[orig_name] = name
+
+    if unique_set is not None:
+        unique_set.add(name)
+
+    return name
+
+
+sane_name_orig = io_scene_fbx.export_fbx.sane_name
+
 
 def patch():
     io_scene_fbx.export_fbx.save_single = save_single
+    io_scene_fbx.export_fbx.sane_name = sane_name
     print("FBX exporter patched")
 
 def unpatch():
     io_scene_fbx.export_fbx.save_single = save_single_orig
+    io_scene_fbx.export_fbx.sane_name = sane_name_orig
+    
     print("FBX exporter unpatched")
     
-io_scene_fbx.export_fbx.save_single = save_single
+patch()
