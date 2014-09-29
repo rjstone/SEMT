@@ -31,9 +31,8 @@ class SE_Props(PropertyGroup):
     mod_dir = StringProperty(name="Mod Path",
                 description="Base directory for your entire mod, not the models subdirectory!",
                 subtype="DIR_PATH")
-    axis_switch = BoolProperty(name="Export using +Y Up -Z Forward",
-                description="Set this if your models are oriented toward +Y as up, -Z as forward to match the game."
-                            " Otherwise, +Z is up +Y is forward (default in Blender).")
+    axis_switch = BoolProperty(name="Attempt Blender to game axis conversion",
+                description="Please leave this disabled unless you know what you're doing and have read the discussion on it.")
     save_xml = BoolProperty(name="Autosave MWM XML files before building",
                 description="Automatically save all text blocks with filenames ending in '.xml' before running mwmbuilder. SBC files will NOT be saved.")
     batch_dirs = BoolProperty(name="Export one directory per model",
@@ -44,9 +43,16 @@ class SE_Props(PropertyGroup):
     use_trackball = BoolProperty(name='Use "Trackball" rotation in 3D editor',
                 description="Use trackball-style rotation in the 3D editor instead of turntable-style."
                             "  This is better for the non-standard axis orientation."
-                            "  If you set this here, it doesn't need to be saved to your global user preferences.")
+                            "  If you set this here, it doesn't need to be saved to your global user preferences.",
+                            update=update_use_trackball)
     status = StringProperty(name="Last result",
                 description="Result of last operation attempt (success, fail, etc).")
+
+
+# stuff for eventually adding a "new from template" File menu item
+# bpy.ops.wm.read_homefile(filepath="", load_ui=True)
+# bpy.types.INFO_MT_file.prepend()
+# bpy.types.INFO_MT_file.append()
 
 
 class SE_FBX_Export(bpy.types.Operator):
@@ -64,16 +70,17 @@ class SE_FBX_Export(bpy.types.Operator):
         self.report({'DEBUG'}, "Exporting to " + modelspath)
 
         semt.status = "FBX export FAILED."   
-        
+
+        # I don't fully understand what's going on here yet, but Nilat says -X forward seems to work for
+        # some reason, at least in 2.71.        
         if semt.axis_switch:
-            self.report({'DEBUG'}, "Using Y up -Z forawrd.")
-            axis_forward='-Z'
+            self.report({'DEBUG'}, "Using Y up -X forward workaround (which seems to actually make -Z forward).")
+            axis_forward='-X'
             axis_up='Y'
         else:
             self.report({'DEBUG'}, "Using Z up Y forward (Blender default).")
             axis_forward='Y'
             axis_up='Z'
-            
 
         bpy.ops.export_scene.fbx(
                 filepath=modelspath,
@@ -151,10 +158,9 @@ class SpaceEngineersExportPanel(bpy.types.Panel):
         row.prop(semt, "mod_dir")
         row = layout.row(align=True)
         row.prop(semt, "use_trackball")
-        # I think it's probably an issue with MWMbuilder ignoring some global data in the FBX file
-        # but the axis switching doesn't seem to work.
-        #row = layout.row(align=True)
-        #row.prop(semt, "axis_switch")
+
+        row = layout.row(align=True)
+        row.prop(semt, "axis_switch")
         row = layout.row(align=True)
         row.prop(semt, "save_xml")        
         row = layout.row(align=True)
@@ -182,6 +188,10 @@ def register():
     
     update_export_fbx_patch(None, bpy.context)
     update_use_trackball(None, bpy.context)
+    
+    # There doesn't seem to be a very good way to fix this right now, so I'm just forcing it to hidden
+    # in order to avoid confusion.
+    bpy.context.user_preferences.view.show_view_name = False
     
     bpy.context.scene.world.semt.status = "Addon loaded and registered."
     

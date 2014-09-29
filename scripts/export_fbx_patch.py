@@ -178,11 +178,13 @@ def save_single(operator, scene, filepath="",
 
             self.__anim_poselist = {}  # we should only access this
 
+        # XXX Space Engineers workaround
         def parRelMatrix(self):
-            if self.fbxParent:
-                return self.fbxParent.matrixWorld.inverted() * self.matrixWorld
-            else:
-                return self.matrixWorld
+            #if self.fbxParent:
+            #    return self.fbxParent.matrixWorld.inverted() * self.matrixWorld
+            #else:
+            #    return self.matrixWorld
+            return self.matrixWorld
 
         def setPoseFrame(self, f, fake=False):
             if fake:
@@ -270,13 +272,13 @@ def save_single(operator, scene, filepath="",
             if isinstance(v, str):
                 fw('\n\t\t\tProperty: "%s", "KString", "U", "%s"' % (k, v))
             elif isinstance(v, int):
-                fw('\n\t\t\tProperty: "%s", "int", "U",%s' % (k, v))
+                fw('\n\t\t\tProperty: "%s", "int", "",%s' % (k, v))
             elif isinstance(v, float):
-                fw('\n\t\t\tProperty: "%s", "double", "U",%s' % (k, v))
+                fw('\n\t\t\tProperty: "%s", "double", "",%s' % (k, v))
             else:
                 list_val = getattr(v, "to_list", lambda: None)()
                 if list_val and len(list_val) == 3:
-                    fw('\n\t\t\tProperty: "%s", "Vector3D", "", "U",%s,%s,%s' % tuple([k] + list_val))
+                    fw('\n\t\t\tProperty: "%s", "Vector3D", "",%s,%s,%s' % tuple([k] + list_val))
                     
     def object_tx(ob, loc, matrix, matrix_mod=None):
         """
@@ -2681,7 +2683,6 @@ def patch():
 def unpatch():
     io_scene_fbx.export_fbx.save_single = save_single_orig
     io_scene_fbx.export_fbx.sane_name = sane_name_orig
-    
     print("FBX exporter unpatched")
     
 patch()
