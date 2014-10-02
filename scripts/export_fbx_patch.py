@@ -1193,8 +1193,13 @@ def save_single(operator, scene, filepath="",
 
         # Calculate the global transform for the mesh in the bind pose the same way we do
         # in write_sub_deformer_skin
-        globalMeshBindPose = my_mesh.matrixWorld * mtx4_z90
+        # Orig:
+        # globalMeshBindPose = my_mesh.matrixWorld * mtx4_z90
+        # pose_items.append((my_mesh.fbxName, globalMeshBindPose))
+        # From Nilat:
+        globalMeshBindPose = my_mesh.matrixWorld 
         pose_items.append((my_mesh.fbxName, globalMeshBindPose))
+        # From Nilat: "this mtx4_z90 stuff is also applied to bones and armatures. Maybe you'll want to clean those too."
 
         if do_shapekeys:
             for kb in my_mesh.blenObject.data.shape_keys.key_blocks[1:]:

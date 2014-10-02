@@ -24,6 +24,16 @@ def update_use_trackball(self, context):
     else:
         context.user_preferences.inputs.ndof_view_rotate_method = 'TURNTABLE'
 
+def update_icon_use_bw(self, context):
+    checkbox = bpy.data.node_groups["BWSwitch"].nodes["UseBW"].check
+    checkbox = context.scene.world.semt.icon_use_bw
+    checkbox.update()
+
+def update_icon_use_blue(self, context):
+    checkbox = bpy.data.node_groups["BlueSwitch"].nodes["UseBlue"].check
+    checkbox = context.scene.world.semt.icon_use_blue
+    checkbox.update()  
+
 class SE_Props(PropertyGroup):
     se_dir = StringProperty(name="Game Path",
                 description="Space Engineers Base Directory: This is used to find MWMBUILDER.exe",
@@ -45,6 +55,12 @@ class SE_Props(PropertyGroup):
                             "  This is better for the non-standard axis orientation."
                             "  If you set this here, it doesn't need to be saved to your global user preferences.",
                             update=update_use_trackball)
+    icon_use_bw = BoolProperty(name="B&W Filter",
+                description="Use black and white filter on icon.",
+                update=update_icon_use_bw)
+    icon_use_blue = BoolProperty(name="Blue Tint Filter",
+                description="Match the Space Engineers blue tinted GUI icon style.",
+                update=update_icon_use_blue)
     status = StringProperty(name="Last result",
                 description="Result of last operation attempt (success, fail, etc).")
 
@@ -75,7 +91,7 @@ class SE_FBX_Export(bpy.types.Operator):
         # some reason, at least in 2.71.        
         if semt.axis_switch:
             self.report({'DEBUG'}, "Using Y up -X forward workaround (which seems to actually make -Z forward).")
-            axis_forward='-X'
+            axis_forward='Z'
             axis_up='Y'
         else:
             self.report({'DEBUG'}, "Using Z up Y forward (Blender default).")
@@ -177,12 +193,37 @@ class SpaceEngineersExportPanel(bpy.types.Panel):
         sub.operator("world.se_mwm_build", text="Build MWM Files")
 
 
+class SpaceEngineersIconRenderingPanel(bpy.types.Panel):
+    """Icon rendering panel in the Rendering tab"""
+    bl_label = "GUI Icon Rendering"
+    bl_idname = "RENDER_SE_Icon_Rendering_layout"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "render"
+    bl_default_closed = False
+    
+    def draw(self, context):
+        layout = self.layout
+        world = context.scene.world
+        semt = world.semt
+
+        # not working for some reason
+        #row = layout.row()
+        #row.prop(semt, "icon_use_bw")
+        #row = layout.row()
+        #row.prop(semt, "icon_use_blue")
+        
+        row = layout.row()
+        row.operator("render.render", text="Render GUI Icon")
+
+
 def register():
     register_class = bpy.utils.register_class
     register_class(SE_Props)
     register_class(SE_FBX_Export)
     register_class(SE_MWM_Build)
     register_class(SpaceEngineersExportPanel)
+    register_class(SpaceEngineersIconRenderingPanel)
 
     bpy.types.World.semt = PointerProperty(name="Space Engineers", description="Space Engineers Export Parametrs", type=SE_Props)
     
@@ -201,6 +242,7 @@ def unregister():
     unregister_class(SE_FBX_Export)
     unregister_class(SE_MWM_Build)
     unregister_class(SpaceEngineersExportPanel)
+    unregister_class(SpaceEngineersIconRenderingPanel)
     
     export_fbx_patch.unpatch()
 
